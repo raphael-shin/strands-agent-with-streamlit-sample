@@ -40,30 +40,14 @@ class BedrockAgent:
         # Register event handlers and build the agent instance
         self._setup_handlers()
 
-        # Create model with reasoning support for Anthropic models
-        if "anthropic.claude" in model_id:
-            bedrock_model = BedrockModel(
-                model_id=model_id,
-                additional_request_fields={
-                    "thinking": {
-                        "type": "enabled",
-                        "budget_tokens": 4096
-                    }
-                },
-                # Capture thinking blocks in responses using proper JSON pointer format
-                additional_response_field_paths=["/output/message/content/0/thinking"]
-            )
-            self.agent = Agent(
-                model=bedrock_model,
-                tools=[calculator, weather],
-                callback_handler=self._callback_handler
-            )
-        else:
-            self.agent = Agent(
-                model=model_id,
-                tools=[calculator, weather],
-                callback_handler=self._callback_handler
-            )
+        # Create model - disable thinking for now due to tool use constraints
+        # Anthropic requires thinking blocks in conversation history after tool use
+        # Current Strands version (1.9.1) doesn't handle this automatically
+        self.agent = Agent(
+            model=model_id,
+            tools=[calculator, weather],
+            callback_handler=self._callback_handler
+        )
     
     def _setup_handlers(self):
         """Register handlers in priority order."""
