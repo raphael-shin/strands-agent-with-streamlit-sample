@@ -41,7 +41,8 @@ class BedrockAgent:
         self._setup_handlers()
 
         # Create model with reasoning support for Anthropic models
-        if "anthropic.claude" in model_id:
+        # Note: Disable thinking for tool use scenarios due to Anthropic constraints
+        if "anthropic.claude" in model_id and False:  # Temporarily disabled
             bedrock_model = BedrockModel(
                 model_id=model_id,
                 additional_request_fields={
