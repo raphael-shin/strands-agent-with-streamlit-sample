@@ -70,13 +70,19 @@ class LoggingHandler(EventHandler):
     
     def handle(self, event: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Log the event with structured metadata."""
+        # Debug: print all events to see structure
+        print(f"🔍 Event received: {list(event.keys())}")
+        
         # Print complete response when it's finished
         if "complete" in event:
             complete_data = event["complete"]
-            if "result" in complete_data:
+            print(f"🔍 Complete data keys: {list(complete_data.keys()) if isinstance(complete_data, dict) else type(complete_data)}")
+            if isinstance(complete_data, dict) and "result" in complete_data:
                 result = complete_data["result"]
-                if "content" in result:
+                print(f"🔍 Result keys: {list(result.keys()) if isinstance(result, dict) else type(result)}")
+                if isinstance(result, dict) and "content" in result:
                     content = result["content"]
+                    print(f"🔍 Content type: {type(content)}")
                     if isinstance(content, list) and len(content) > 0:
                         # Extract the full text content including all tags
                         full_text = content[0].get("text", "")
@@ -86,6 +92,11 @@ class LoggingHandler(EventHandler):
                             print("="*80)
                             print(full_text)
                             print("="*80 + "\n")
+        
+        # Also check for other event types that might contain the full response
+        for key, value in event.items():
+            if isinstance(value, dict) and "content" in value:
+                print(f"🔍 Found content in {key}: {type(value['content'])}")
         
         return None
 
