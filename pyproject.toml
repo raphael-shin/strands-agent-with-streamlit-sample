@@ -1,0 +1,13 @@
+[project]
+name = "streamlit-sample"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "strands-agents>=1.9.1",
+    "streamlit>=1.50.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
