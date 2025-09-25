@@ -73,18 +73,25 @@ class LoggingHandler(EventHandler):
         # Debug: print complete event structure
         print(f"\n🔍 EVENT: {event}")
         
+        # Check for reasoningContent in event structure
+        if "event" in event:
+            event_data = event["event"]
+            if "contentBlockDelta" in event_data:
+                delta_data = event_data["contentBlockDelta"]
+                delta = delta_data.get("delta", {})
+                if "SDK_UNKNOWN_MEMBER" in delta:
+                    unknown_member = delta["SDK_UNKNOWN_MEMBER"]
+                    if unknown_member.get("name") == "reasoningContent":
+                        print("🧠 REASONING CONTENT DETECTED!")
+        
         # Print complete response when it's finished
-        if "complete" in event:
-            complete_data = event["complete"]
-            print(f"🔍 Complete data keys: {list(complete_data.keys()) if isinstance(complete_data, dict) else type(complete_data)}")
-            if isinstance(complete_data, dict) and "result" in complete_data:
-                result = complete_data["result"]
-                print(f"🔍 Result keys: {list(result.keys()) if isinstance(result, dict) else type(result)}")
-                if isinstance(result, dict) and "content" in result:
-                    content = result["content"]
-                    print(f"🔍 Content type: {type(content)}")
+        if "result" in event:
+            result = event["result"]
+            if hasattr(result, "message") and result.message:
+                message = result.message
+                if "content" in message:
+                    content = message["content"]
                     if isinstance(content, list) and len(content) > 0:
-                        # Extract the full text content including all tags
                         full_text = content[0].get("text", "")
                         if full_text:
                             print("\n" + "="*80)

@@ -156,6 +156,7 @@ class StreamlitUIHandler(EventHandler):
             "data",
             "result",
             "force_stop",
+            "event",  # Add event type for contentBlockDelta
         }
         return event_type in ui_events
     
@@ -174,6 +175,8 @@ class StreamlitUIHandler(EventHandler):
             self._handle_result(event)
         elif "force_stop" in event:
             self._handle_force_stop(event)
+        elif "event" in event:
+            self._handle_event(event)
         
         return None  # UI updates do not return additional payload
     
@@ -284,6 +287,33 @@ class StreamlitUIHandler(EventHandler):
         
         if self.ui_state.response_placeholder:
             self.ui_state.response_placeholder.markdown(f":red[{self.ui_state.force_stop_error}]")
+    
+    def _handle_event(self, event: Dict[str, Any]) -> None:
+        """Handle raw event data from the agent."""
+        event_data = event.get("event", {})
+        
+        # Handle contentBlockDelta events
+        if "contentBlockDelta" in event_data:
+            delta_data = event_data["contentBlockDelta"]
+            delta = delta_data.get("delta", {})
+            
+            # Check for reasoningContent in SDK_UNKNOWN_MEMBER
+            if "SDK_UNKNOWN_MEMBER" in delta:
+                unknown_member = delta["SDK_UNKNOWN_MEMBER"]
+                if unknown_member.get("name") == "reasoningContent":
+                    # This is reasoning content - show the expand widget
+                    self._show_reasoning_widget()
+    
+    def _show_reasoning_widget(self):
+        """Show the reasoning expand widget."""
+        try:
+            if not self.ui_state.reasoning_status and self.ui_state.chain_placeholder:
+                self.ui_state.reasoning_status = self.ui_state.chain_placeholder.status(
+                    "🧠 Reasoning...", 
+                    expanded=True
+                )
+        except Exception:
+            pass  # Fail silently if not in Streamlit context
     
     def _refresh_tool_ui(self):
         """Re-render the tool call expander."""
