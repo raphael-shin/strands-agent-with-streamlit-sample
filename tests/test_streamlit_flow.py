@@ -6,15 +6,14 @@ import pytest
 from unittest.mock import Mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_PATH = PROJECT_ROOT / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 pytest.importorskip("strands")
 
-from streamlit_sample.agents.bedrock_agent import BedrockAgent
-from streamlit_sample.handlers import ui_handlers as ui_handlers_module
-from streamlit_sample.handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
+from agents.bedrock_agent import BedrockAgent
+from handlers import ui_handlers as ui_handlers_module
+from handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
 
 
 class MockPlaceholder:
@@ -222,7 +221,7 @@ class TestEventRegistry:
     
     def test_event_type_extraction(self):
         """Event type extraction should respect the priority order."""
-        from streamlit_sample.handlers.event_handlers import EventRegistry
+        from handlers.event_handlers import EventRegistry
         
         registry = EventRegistry()
         

@@ -6,14 +6,14 @@ from typing import Any, Dict, Generator
 from strands import Agent
 from strands.tools import tool
 
-from ..handlers.event_handlers import EventRegistry, EventType
-from ..handlers.lifecycle_handlers import (
+from handlers.event_handlers import EventRegistry, EventType
+from handlers.lifecycle_handlers import (
     DebugHandler,
     LifecycleHandler,
     LoggingHandler,
     ReasoningHandler,
 )
-from ..handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
+from handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
 
 @tool
 def calculator(expression: str) -> str:
@@ -31,7 +31,7 @@ def weather(location: str) -> str:
     return f"Weather in {location}: Sunny, 22°C (Mock data)"
 
 class BedrockAgent:
-    def __init__(self, region: str = "us-west-2", model_id: str = "openai.gpt-oss-120b-1:0"):
+    def __init__(self, region: str = "us-west-2", model_id: str = "openai.gpt-oss-20b-1:0"):
         self.event_queue = queue.Queue()
         self.event_registry = EventRegistry()
         self.ui_state = StreamlitUIState()

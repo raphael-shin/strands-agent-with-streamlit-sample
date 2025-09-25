@@ -6,15 +6,14 @@ import time
 from unittest.mock import Mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_PATH = PROJECT_ROOT / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import pytest
 
 pytest.importorskip("strands")
 
-from streamlit_sample.handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
+from handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
 
 
 def test_streamlit_handler_without_context():
@@ -70,8 +69,8 @@ def test_handler_in_worker_thread():
 
 def test_event_registry_error_handling():
     """Confirm that handler exceptions are surfaced as structured results."""
-    from streamlit_sample.handlers.event_handlers import EventRegistry
-    from streamlit_sample.handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
+    from handlers.event_handlers import EventRegistry
+    from handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
     
     registry = EventRegistry()
     ui_state = StreamlitUIState()
@@ -127,7 +126,7 @@ def test_generator_cleanup():
 
     # Inspect BedrockAgent to confirm the try/finally pattern exists
     import inspect
-    from streamlit_sample.agents.bedrock_agent import BedrockAgent
+    from agents.bedrock_agent import BedrockAgent
     
     source = inspect.getsource(BedrockAgent.stream_response)
     assert "try:" in source and "finally:" in source, "BedrockAgent.stream_response is missing try/finally"

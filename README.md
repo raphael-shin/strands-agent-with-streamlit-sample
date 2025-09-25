@@ -1,6 +1,6 @@
-# Strands Agent + Streamlit Integration
+# 개요
 
-**Strands Agent를 위한 Streamlit 프론트엔드 통합 모범 사례**
+**Strands Agent를 위한 Streamlit 프론트엔드 Sample 프로젝트**
 
 이 애플리케이션은 Strands Agent의 스트리밍 응답을 Streamlit UI에서 처리하기 위한 **확장 가능하고 안정적인 아키텍처**를 제공합니다. 실시간 텍스트 스트리밍, 도구 사용 표시, 추론 과정 시각화 등 Strands Agent의 모든 기능을 Streamlit에서 완벽하게 활용할 수 있습니다.
 
@@ -93,51 +93,24 @@ export AWS_DEFAULT_REGION=us-west-2
 ## 📁 프로젝트 구조
 
 ```
-streamlit-sample/
-├── app.py                             # Streamlit 실행 진입점 (랩퍼)
+strands-agent-with-streamlit-sample/
+├── app.py                             # Streamlit 실행 진입점
 ├── pyproject.toml                     # 프로젝트 설정
 ├── requirements.txt                   # Python 의존성 (선택)
-├── src/
-│   └── streamlit_sample/
-│       ├── __init__.py
-│       ├── app.py                    # Streamlit UI 로직
-│       ├── main.py                   # 콘솔 진입점 예시
-│       ├── agents/
-│       │   └── bedrock_agent.py      # Strands Agent 통합 및 조정
-│       └── handlers/
-│           ├── __init__.py
-│           ├── event_handlers.py     # 이벤트 핸들러 아키텍처
-│           ├── lifecycle_handlers.py # 생명주기/로깅 핸들러
-│           └── ui_handlers.py        # Streamlit UI 전용 핸들러
-└── tests/
-    ├── test_streamlit_flow.py        # UI 플로우 테스트
-    └── test_thread_safety.py         # 스레드 안전성 테스트
+├── agents/
+│   └── bedrock_agent.py              # Strands Agent 통합 및 조정
+├── handlers/
+│   ├── __init__.py
+│   ├── event_handlers.py             # 이벤트 핸들러 아키텍처
+│   ├── lifecycle_handlers.py         # 생명주기/로깅 핸들러
+│   └── ui_handlers.py                # Streamlit UI 전용 핸들러
+├── tests/
+│   ├── test_streamlit_flow.py        # UI 플로우 테스트
+│   └── test_thread_safety.py         # 스레드 안전성 테스트
+└── .venv/                            # 가상환경
 ```
 
-## 🔧 개발자 가이드
-
-### 새로운 이벤트 핸들러 추가
-
-```python
-from streamlit_sample.handlers.event_handlers import EventHandler
-
-class CustomHandler(EventHandler):
-    @property
-    def priority(self) -> int:
-        return 60  # 우선순위 설정
-    
-    def can_handle(self, event_type: str) -> bool:
-        return event_type == "custom_event"
-    
-    def handle(self, event: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        # 이벤트 처리 로직
-        return {"processed": True}
-
-# BedrockAgent에 등록
-agent.event_registry.register(CustomHandler())
-```
-
-### 테스트 실행
+## 테스트 실행
 
 ```bash
 # UI 플로우 테스트
@@ -149,68 +122,6 @@ python tests/test_thread_safety.py
 # 전체 테스트 (pytest 설치 시)
 pytest tests -v
 ```
-
-## 🛡️ 안정성 특징
-
-### 스레드 안전성
-- **메인 스레드 UI 업데이트**: Streamlit 컨텍스트에서만 UI 조작
-- **워커 스레드 격리**: 백그라운드 처리와 UI 업데이트 분리
-- **예외 안전성**: 핸들러 에러 시에도 스트림 계속 진행
-
-### 에러 처리
-- **이중 안전장치**: EventRegistry + app.py 레벨 예외 처리
-- **사용자 친화적 에러 표시**: 기술적 오류를 이해하기 쉽게 표시
-- **자동 복구**: 일시적 오류 후 자동으로 정상 동작 재개
-
-### 리소스 관리
-- **이벤트 큐 정리**: 스트림 종료 후 남은 이벤트 자동 정리
-- **메모리 효율성**: 불필요한 이벤트 누적 방지
-- **상태 초기화**: 각 대화마다 깔끔한 상태 시작
-
-## 🎨 커스터마이징
-
-### UI 테마 변경
-
-```python
-# src/streamlit_sample/app.py에서 Streamlit 설정 수정
-st.set_page_config(
-    page_title="Custom Agent Chat",
-    page_icon="🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-```
-
-### 새로운 도구 추가
-
-```python
-# src/streamlit_sample/agents/bedrock_agent.py에서 도구 추가
-from strands.tools import tool
-
-@tool
-def custom_tool(input_data: str) -> str:
-    """커스텀 도구 설명"""
-    return f"처리 결과: {input_data}"
-
-# Agent 생성 시 도구 등록
-self.agent = Agent(
-    model=model_id,
-    tools=[calculator, weather, custom_tool],
-    callback_handler=self._callback_handler
-)
-```
-
-## 📊 성능 최적화
-
-### 권장 설정
-- **Python**: 3.12+
-- **메모리**: 최소 2GB RAM
-- **CPU**: 멀티코어 권장 (스레드 처리용)
-
-### 모니터링
-- 이벤트 처리 로그 확인
-- 핸들러 에러 모니터링
-- 스트림 응답 시간 측정
 
 ## 🤝 기여하기
 
@@ -229,25 +140,6 @@ self.agent = Agent(
 ## 📄 라이선스
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.
-
-## 🆘 문제 해결
-
-### 자주 발생하는 문제
-
-**Q: "missing ScriptRunContext" 경고가 나타남**
-A: 핸들러가 워커 스레드에서 호출되고 있습니다. 메인 스레드에서만 UI 업데이트가 이루어지는지 확인하세요.
-
-**Q: 스트림이 중간에 멈춤**
-A: 핸들러에서 예외가 발생했을 가능성이 있습니다. 에러 메시지를 확인하고 해당 핸들러를 점검하세요.
-
-**Q: UI가 업데이트되지 않음**
-A: placeholder 설정이 올바른지 확인하고, `test_streamlit_flow.py`를 실행하여 핸들러 동작을 검증하세요.
-
-### 지원
-
-- **이슈 리포트**: GitHub Issues
-- **문서**: 이 README 및 코드 주석
-- **테스트**: 자동화된 테스트 스위트 활용
 
 ---
 
