@@ -46,9 +46,39 @@ def run_app() -> None:
         layout="wide",
     )
 
-    st.title("🤖 Amazon Bedrock Agent Chat")
+    # Sidebar for model selection
+    with st.sidebar:
+        st.header("🔧 Model Settings")
+        
+        available_models = [
+            "anthropic.claude-sonnet-4-20250514-v1:0",
+            "openai.gpt-oss-120b-1:0", 
+            "openai.gpt-oss-20b-1:0",
+            "amazon.nova-pro-v1:0"
+        ]
+        
+        selected_model = st.selectbox(
+            "Select Model:",
+            available_models,
+            index=0
+        )
+        
+        # Initialize or update session state
+        if "current_model" not in st.session_state:
+            st.session_state.current_model = selected_model
+            st.session_state.agent = BedrockAgent(model_id=selected_model)
+            st.session_state.messages = []
+        elif st.session_state.current_model != selected_model:
+            # Model changed - start new session
+            st.session_state.current_model = selected_model
+            st.session_state.agent = BedrockAgent(model_id=selected_model)
+            st.session_state.messages = []
+            st.rerun()
 
-    # Initialize session state
+    st.title("🤖 Amazon Bedrock Agent Chat")
+    st.caption(f"Current model: {st.session_state.current_model}")
+
+    # Initialize session state for backward compatibility
     if "agent" not in st.session_state:
         st.session_state.agent = BedrockAgent()
     if "messages" not in st.session_state:
