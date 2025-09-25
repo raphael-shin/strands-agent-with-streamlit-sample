@@ -35,7 +35,6 @@ def test_streamlit_handler_without_context():
         assert False, "Exception should have been raised"
     except Exception as e:
         assert "main thread" in str(e)
-        print(f"Expected exception raised: {e}")
 
 
 def test_handler_in_worker_thread():
@@ -67,7 +66,6 @@ def test_handler_in_worker_thread():
     # Ensure the worker thread hit the exception path
     assert exception_caught.is_set(), "Expected the worker thread to raise"
     assert len(exception_message) > 0
-    print(f"Worker thread exception observed: {exception_message[0]}")
 
 
 def test_event_registry_error_handling():
@@ -96,7 +94,6 @@ def test_event_registry_error_handling():
     error_info = results[0]["handler_error"]
     assert error_info["handler"] == "ErrorHandler"
     assert error_info["error_message"] == "Test handler error"
-    print(f"Handler error surfaced: {error_info}")
 
 
 def test_generator_cleanup():
@@ -127,7 +124,6 @@ def test_generator_cleanup():
     
     # Ensure the finally block executed
     assert len(cleanup_called) > 0, "Expected finally block to run"
-    print("Generator cleanup flag triggered")
 
     # Inspect BedrockAgent to confirm the try/finally pattern exists
     import inspect
@@ -135,19 +131,14 @@ def test_generator_cleanup():
     
     source = inspect.getsource(BedrockAgent.stream_response)
     assert "try:" in source and "finally:" in source, "BedrockAgent.stream_response is missing try/finally"
-    print("BedrockAgent.stream_response contains try/finally structure")
 
 
 if __name__ == "__main__":
-    print("=== Thread safety smoke tests ===")
-
     try:
         test_streamlit_handler_without_context()
         test_handler_in_worker_thread()
         test_event_registry_error_handling()
         test_generator_cleanup()
-        print("\nAll thread-safety smoke tests passed")
     except Exception as e:  # pragma: no cover - manual execution helper
-        print(f"\nThread-safety smoke tests failed: {e}")
         import traceback
         traceback.print_exc()

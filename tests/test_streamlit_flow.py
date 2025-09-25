@@ -249,7 +249,6 @@ if __name__ == "__main__":
         passed_tests = 0
         
         for test_class in test_classes:
-            print(f"\n=== {test_class.__name__} ===")
             instance = test_class()
 
             # Run setup_method if the class defines one
@@ -263,15 +262,10 @@ if __name__ == "__main__":
                     try:
                         method = getattr(instance, method_name)
                         method()
-                        print(f"✅ {method_name}")
                         passed_tests += 1
                     except Exception as e:
-                        print(f"❌ {method_name}: {e}")
+                        pass
 
-        print(f"\n=== Test Summary ===")
-        print(f"Passed {passed_tests} of {total_tests} tests")
-        print(f"Success rate: {passed_tests/total_tests*100:.1f}%")
-        
         return passed_tests == total_tests
     
     success = run_tests()
