@@ -70,6 +70,23 @@ class LoggingHandler(EventHandler):
     
     def handle(self, event: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Log the event with structured metadata."""
+        # Print complete response when it's finished
+        if "complete" in event:
+            complete_data = event["complete"]
+            if "result" in complete_data:
+                result = complete_data["result"]
+                if "content" in result:
+                    content = result["content"]
+                    if isinstance(content, list) and len(content) > 0:
+                        # Extract the full text content including all tags
+                        full_text = content[0].get("text", "")
+                        if full_text:
+                            print("\n" + "="*80)
+                            print("🤖 COMPLETE MODEL RESPONSE:")
+                            print("="*80)
+                            print(full_text)
+                            print("="*80 + "\n")
+        
         return None
 
 
