@@ -50,8 +50,8 @@ class BedrockAgent:
                         "budget_tokens": 4096
                     }
                 },
-                # Capture thinking blocks in responses to preserve them
-                additional_response_field_paths=["thinking"]
+                # Capture thinking blocks in responses using proper JSON pointer format
+                additional_response_field_paths=["/output/message/content/0/thinking"]
             )
             self.agent = Agent(
                 model=bedrock_model,
