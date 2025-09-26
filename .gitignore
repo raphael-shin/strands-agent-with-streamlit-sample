@@ -13,6 +13,9 @@ dist/
 venv/
 ENV/
 
+# Allow env/ directory for sample configuration
+!env/
+
 # Streamlit and testing caches
 .streamlit/
 .pytest_cache/

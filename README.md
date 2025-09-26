@@ -1,55 +1,61 @@
-# 개요
+# Overview
 
-**Strands Agent를 위한 Streamlit 프론트엔드 Sample 프로젝트**
+**Streamlit Frontend Sample Project for Strands Agent**
 
-이 애플리케이션은 Strands Agent의 스트리밍 응답을 Streamlit UI에서 처리하기 위한 **확장 가능하고 안정적인 아키텍처**를 제공합니다. 실시간 텍스트 스트리밍, 도구 사용 표시, 추론 과정 시각화 등 Strands Agent의 모든 기능을 Streamlit에서 완벽하게 활용할 수 있습니다.
+This application provides a **scalable and robust architecture** for processing Strands Agent streaming responses in Streamlit UI. It perfectly utilizes all Strands Agent features including real-time text streaming, tool usage visualization, and reasoning process display in Streamlit.
 
-## 🎯 주요 특징
+## 🎬 Demo
 
-### ✨ 완전한 Strands Agent 통합
-- **실시간 스트리밍**: 텍스트 응답의 실시간 표시 (버퍼링 방식으로 깔끔한 출력)
-- **도구 사용 시각화**: 계산기, 날씨 등 도구 실행 과정을 상태 위젯으로 표시
-- **Chain of Thought 처리**: `<thinking>` 블록을 자동 감지하여 별도 상태 위젯에 표시
+![Demo](demo.gif)
 
-### 🏗️ 확장 가능한 아키텍처
-- **계층화된 구조**: UI, 이벤트 처리, 비즈니스 로직의 명확한 분리
-- **모듈화된 설계**: 각 컴포넌트의 단일 책임 원칙 준수
-- **중앙집중식 설정**: `AppConfig`를 통한 통합 설정 관리
-- **재사용 가능한 컴포넌트**: 독립적으로 테스트하고 재사용 가능한 모듈
-- **스레드 안전성**: Streamlit 컨텍스트에서 안전한 UI 업데이트
-- **테스트 자동화**: 포괄적인 단위 테스트 및 통합 테스트
+> Live demo showing the application in action. You can see Chain of Thought processing, tool usage visualization, and clean streaming output.
 
-## 🚀 빠른 시작
+## 🎯 Key Features
 
-### 설치 및 실행
+### ✨ Complete Strands Agent Integration
+- **Real-time Streaming**: Live text response display (buffered streaming for clean output)
+- **Tool Usage Visualization**: Calculator, weather and other tool execution processes shown as status widgets
+- **Chain of Thought Processing**: Automatic `<thinking>` block detection and display in separate status widgets
+
+### 🏗️ Scalable Architecture
+- **Layered Structure**: Clear separation of UI, event processing, and business logic layers
+- **Modular Design**: Single responsibility principle for each component
+- **Centralized Configuration**: Unified configuration management through `AppConfig`
+- **Reusable Components**: Independently testable and reusable modules
+- **Thread Safety**: Safe UI updates within Streamlit context
+- **Test Automation**: Comprehensive unit and integration testing
+
+## 🚀 Quick Start
+
+### Installation and Setup
 
 ```bash
-# 저장소 클론
+# Clone repository
 git clone <repository-url>
-cd streamlit-sample
+cd strands-agent-with-streamlit-sample
 
-# 의존성 설치
+# Install dependencies
 uv sync
 
-# 애플리케이션 실행
+# Run application
 uv run streamlit run app.py
 ```
 
-### 환경 변수 설정
+### Environment Variables Setup
 
-#### 1. 환경 변수 파일 생성
+#### 1. Create Environment File
 ```bash
-# 샘플 환경 변수 파일을 복사하여 .env 파일 생성
+# Copy sample environment file to create .env file
 cp env/local.env .env
 ```
 
-#### 2. .env 파일 수정
+#### 2. Edit .env File
 ```bash
-# .env 파일을 열고 실제 값으로 수정
+# Open .env file and update with actual values
 vi .env
 ```
 
-`.env` 파일 예시:
+`.env` file example:
 ```env
 # AWS Credentials (required for Bedrock access)
 AWS_ACCESS_KEY_ID=your_actual_access_key
@@ -64,50 +70,50 @@ LOG_LEVEL=INFO
 DEFAULT_MODEL=us.amazon.nova-pro-v1:0
 ```
 
-#### 3. 대안: 시스템 환경변수 사용
+#### 3. Alternative: System Environment Variables
 ```bash
-# AWS CLI 설정
+# AWS CLI configuration
 aws configure
 
-# 또는 환경 변수 직접 설정
+# Or set environment variables directly
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
 export AWS_DEFAULT_REGION=us-west-2
 
-# 디버그 로깅 활성화 (선택사항)
+# Enable debug logging (optional)
 export DEBUG_LOGGING=true
 ```
 
-> **참고**: `.env` 파일의 설정이 시스템 환경변수보다 우선순위가 낮습니다. 시스템 환경변수가 설정되어 있으면 해당 값이 사용됩니다.
+> **Note**: System environment variables take precedence over `.env` file settings. If system environment variables are set, they will be used instead.
 
-## 📋 사용법
+## 📋 Usage
 
-1. **웹 브라우저**에서 `http://localhost:8501` 접속
-2. **사이드바**에서 원하는 AI 모델 선택
-3. **채팅 입력창**에 질문 입력
-4. **실시간 응답** 확인:
-   - 깔끔한 텍스트 스트리밍 (thinking 태그 자동 필터링)
-   - 도구 사용 과정 (상태 위젯으로 표시)
-   - Chain of Thought (별도 확장 가능한 위젯)
+1. Open **web browser** and go to `http://localhost:8501`
+2. Select desired **AI model** from sidebar
+3. Enter your **question** in chat input
+4. View **real-time response**:
+   - Clean text streaming (automatic thinking tag filtering)
+   - Tool usage processes (displayed as status widgets)
+   - Chain of Thought (separate expandable widgets)
 
-### 예시 질문
+### Example Queries
 
 ```
-계산: "계산기 도구를 활용해서 1+1을 계산해주세요"
-날씨: "서울 날씨 어때?"
-복잡한 계산: "1+100을 계산해주세요"
+Calculation: "Please use the calculator tool to compute 1+1"
+Weather: "What's the weather in Seoul?"
+Complex calculation: "Please calculate 1+100"
 ```
 
-### UI 특징
+### UI Features
 
-- **버퍼링 스트리밍**: 첫 20글자를 버퍼링하여 thinking 태그 감지 후 깔끔한 출력
-- **상태 위젯**: 도구 실행 및 Chain of Thought를 별도 위젯에 표시 (완료 후 확장 가능)
-- **중복 방지**: 스트리밍 완료 후 중복 출력 없는 최종 결과 표시
-- **모델 전환**: 사이드바에서 실시간으로 AI 모델 변경 가능
+- **Buffered Streaming**: Buffers first 20 characters to detect thinking tags for clean output
+- **Status Widgets**: Tool execution and Chain of Thought displayed in separate widgets (expandable after completion)
+- **Duplicate Prevention**: No duplicate output after streaming completion
+- **Model Switching**: Real-time AI model switching from sidebar
 
-## 🏛️ 아키텍처
+## 🏛️ Architecture
 
-### 핵심 컴포넌트
+### Core Components
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -122,131 +128,131 @@ export DEBUG_LOGGING=true
 └─────────────────┘    └──────────────────┘
 ```
 
-### 이벤트 핸들러 시스템
+### Event Handler System
 
-| 핸들러 | 역할 | 우선순위 |
-|--------|------|----------|
-| `StreamlitUIHandler` | UI 업데이트 및 사용자 인터페이스 | 10 (높음) |
-| `ReasoningHandler` | 추론 과정 처리 및 분석 | 30 |
-| `LifecycleHandler` | 생명주기 이벤트 관리 | 50 |
-| `LoggingHandler` | 구조화된 로깅 | 80 |
-| `DebugHandler` | 디버깅 정보 수집 | 95 (낮음) |
+| Handler | Role | Priority |
+|---------|------|----------|
+| `StreamlitUIHandler` | UI updates and user interface | 10 (High) |
+| `ReasoningHandler` | Reasoning process handling and analysis | 30 |
+| `LifecycleHandler` | Lifecycle event management | 50 |
+| `LoggingHandler` | Structured logging | 80 |
+| `DebugHandler` | Debug information collection | 95 (Low) |
 
-#### UI 관리자 시스템
+#### UI Manager System
 
-| 관리자 | 역할 |
-|--------|------|
-| `MessageUIManager` | 메시지 스트리밍 및 최종 렌더링 |
-| `COTUIManager` | Chain of Thought 감지 및 필터링 |
-| `ToolUIManager` | 도구 실행 상태 및 결과 표시 |
-| `ReasoningUIManager` | 추론 과정 상태 위젯 관리 |
+| Manager | Role |
+|---------|------|
+| `MessageUIManager` | Message streaming and final rendering |
+| `COTUIManager` | Chain of Thought detection and filtering |
+| `ToolUIManager` | Tool execution status and result display |
+| `ReasoningUIManager` | Reasoning process status widget management |
 
-#### 새로운 UI 레이어 (리팩토링된 구조)
+#### New UI Layer (Refactored Structure)
 
-| 컴포넌트 | 역할 | 라인 수 |
-|----------|------|---------|
-| `StreamlitChatApp` | 메인 애플리케이션 클래스 | 29줄 |
-| `AppConfig` | 중앙집중식 설정 관리 | 46줄 |
-| `SessionManager` | Streamlit 세션 상태 관리 | 71줄 |
-| `UIManager` | UI 컴포넌트 렌더링 | 44줄 |
-| `ChatHandler` | 채팅 로직 및 스트리밍 처리 | 74줄 |
-| `MessageRenderer` | 메시지 렌더링 로직 | 41줄 |
-| `PlaceholderManager` | placeholder 생성/관리 | 31줄 |
-| `ErrorHandler` | 통합 에러 처리 | 33줄 |
+| Component | Role | Lines |
+|-----------|------|-------|
+| `StreamlitChatApp` | Main application class | 29 lines |
+| `AppConfig` | Centralized configuration management | 46 lines |
+| `SessionManager` | Streamlit session state management | 71 lines |
+| `UIManager` | UI component rendering | 44 lines |
+| `ChatHandler` | Chat logic and streaming processing | 74 lines |
+| `MessageRenderer` | Message rendering logic | 41 lines |
+| `PlaceholderManager` | Placeholder creation/management | 31 lines |
+| `ErrorHandler` | Integrated error handling | 33 lines |
 
-## 📁 프로젝트 구조
+## 📁 Project Structure
 
 ```
 strands-agent-with-streamlit-sample/
-├── app.py                             # 간소화된 진입점 (13줄)
-├── pyproject.toml                     # 프로젝트 설정
-├── requirements.txt                   # Python 의존성 (선택)
-├── uv.lock                           # UV 잠금 파일
+├── app.py                             # Simplified entry point (13 lines)
+├── pyproject.toml                     # Project configuration
+├── requirements.txt                   # Python dependencies (optional)
+├── uv.lock                           # UV lock file
 ├──
-├── app/                              # 🆕 Streamlit UI 레이어
+├── app/                              # 🆕 Streamlit UI Layer
 │   ├── __init__.py
-│   ├── main.py                       # StreamlitChatApp 클래스
-│   ├── config.py                     # 중앙집중식 설정 관리
-│   ├── env_loader.py                 # 환경변수 로딩 (.env 지원)
-│   ├── session_manager.py            # Streamlit 세션 상태 관리
-│   ├── ui_manager.py                 # UI 컴포넌트 렌더링
-│   ├── chat_handler.py               # 채팅 로직 및 스트리밍 처리
-│   └── utils/                        # UI 유틸리티 모듈
+│   ├── main.py                       # StreamlitChatApp class
+│   ├── config.py                     # Centralized configuration management
+│   ├── env_loader.py                 # Environment variable loading (.env support)
+│   ├── session_manager.py            # Streamlit session state management
+│   ├── ui_manager.py                 # UI component rendering
+│   ├── chat_handler.py               # Chat logic and streaming processing
+│   └── utils/                        # UI utility modules
 │       ├── __init__.py
-│       ├── message_renderer.py       # 메시지 렌더링 로직
-│       ├── placeholder_manager.py    # Streamlit placeholder 관리
-│       └── error_handler.py          # 통합 에러 처리
+│       ├── message_renderer.py       # Message rendering logic
+│       ├── placeholder_manager.py    # Streamlit placeholder management
+│       └── error_handler.py          # Integrated error handling
 │
-├── agents/                           # 비즈니스 로직 레이어 (기존 유지)
-│   └── strands_agent.py              # Strands Agent 통합 및 조정
+├── agents/                           # Business logic layer (maintained)
+│   └── strands_agent.py              # Strands Agent integration and coordination
 │
-├── handlers/                         # 이벤트 처리 레이어 (기존 유지)
+├── handlers/                         # Event processing layer (maintained)
 │   ├── __init__.py
-│   ├── event_handlers.py             # 이벤트 핸들러 아키텍처
-│   ├── lifecycle_handlers.py         # 생명주기/로깅 핸들러
-│   ├── ui_handlers.py                # Streamlit UI 전용 핸들러
-│   └── ui/                          # UI 관리자 모듈
+│   ├── event_handlers.py             # Event handler architecture
+│   ├── lifecycle_handlers.py         # Lifecycle/logging handlers
+│   ├── ui_handlers.py                # Streamlit UI dedicated handlers
+│   └── ui/                          # UI manager modules
 │       ├── __init__.py
-│       ├── cot.py                   # Chain of Thought 처리
-│       ├── messages.py              # 메시지 스트리밍
-│       ├── reasoning.py             # 추론 과정 표시
-│       ├── state.py                 # UI 상태 관리
-│       ├── tools.py                 # 도구 실행 표시
-│       ├── utils.py                 # 유틸리티 함수
-│       └── placeholders.py          # placeholder 유틸리티
+│       ├── cot.py                   # Chain of Thought processing
+│       ├── messages.py              # Message streaming
+│       ├── reasoning.py             # Reasoning process display
+│       ├── state.py                 # UI state management
+│       ├── tools.py                 # Tool execution display
+│       ├── utils.py                 # Utility functions
+│       └── placeholders.py          # Placeholder utilities
 │
-├── env/                              # 🆕 환경 변수 설정
-│   └── local.env                     # 샘플 환경 변수 파일
+├── env/                              # 🆕 Environment variable settings
+│   └── local.env                     # Sample environment variable file
 │
 ├── tests/
-│   ├── test_streamlit_flow.py        # UI 플로우 테스트
-│   └── test_thread_safety.py         # 스레드 안전성 테스트
-└── .venv/                            # 가상환경
+│   ├── test_streamlit_flow.py        # UI flow testing
+│   └── test_thread_safety.py         # Thread safety testing
+└── .venv/                            # Virtual environment
 ```
 
-## 테스트 실행
+## Running Tests
 
 ```bash
-# UI 플로우 테스트
+# UI flow tests
 python tests/test_streamlit_flow.py
 
-# 스레드 안전성 테스트
+# Thread safety tests
 python tests/test_thread_safety.py
 
-# 전체 테스트 (pytest 설치 시)
+# All tests (when pytest is installed)
 pytest tests -v
 ```
 
-## 🤝 기여하기
+## 🤝 Contributing
 
-1. **Fork** 저장소
-2. **Feature 브랜치** 생성 (`git checkout -b feature/amazing-feature`)
-3. **변경사항 커밋** (`git commit -m 'Add amazing feature'`)
-4. **브랜치 푸시** (`git push origin feature/amazing-feature`)
-5. **Pull Request** 생성
+1. **Fork** the repository
+2. **Create feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Commit changes** (`git commit -m 'Add amazing feature'`)
+4. **Push branch** (`git push origin feature/amazing-feature`)
+5. **Create Pull Request**
 
-### 개발 가이드라인
+### Development Guidelines
 
-#### 코드 품질
-- **단일 책임 원칙**: 각 클래스와 함수는 하나의 명확한 책임만 가져야 함
-- **모듈 크기**: 파일당 80줄 이하 권장 (복잡한 로직 제외)
-- **타입 힌트**: 모든 함수와 메서드에 타입 힌트 추가
-- **코드 스타일**: PEP 8 준수
+#### Code Quality
+- **Single Responsibility Principle**: Each class and function should have one clear responsibility
+- **Module Size**: Recommended 80 lines or less per file (excluding complex logic)
+- **Type Hints**: Add type hints to all functions and methods
+- **Code Style**: Follow PEP 8
 
-#### 아키텍처
-- **계층 분리**: UI 레이어(`app/`)는 이벤트 처리 레이어(`handlers/`)만 사용
-- **설정 중앙화**: 새로운 설정은 `AppConfig`에 추가
-- **에러 처리**: `ErrorHandler`를 통한 통합 에러 처리 사용
+#### Architecture
+- **Layer Separation**: UI layer (`app/`) should only use event processing layer (`handlers/`)
+- **Configuration Centralization**: Add new settings to `AppConfig`
+- **Error Handling**: Use integrated error handling through `ErrorHandler`
 
-#### 테스트
-- 새로운 컴포넌트는 테스트와 함께 제출
-- 기존 테스트가 모두 통과해야 함
-- 각 모듈별로 독립적인 단위 테스트 작성
+#### Testing
+- Submit new components with tests
+- All existing tests must pass
+- Write independent unit tests for each module
 
-## 📄 라이선스
+## 📄 License
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+This project is distributed under the MIT License.
 
 ---
 
-**Strands Agent + Streamlit의 완벽한 통합을 경험해보세요!** 🚀
+**Experience the perfect integration of Strands Agent + Streamlit!** 🚀
