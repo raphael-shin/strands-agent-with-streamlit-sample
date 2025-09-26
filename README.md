@@ -12,8 +12,10 @@
 - **Chain of Thought 처리**: `<thinking>` 블록을 자동 감지하여 별도 상태 위젯에 표시
 
 ### 🏗️ 확장 가능한 아키텍처
-- **이벤트 핸들러 시스템**: 새로운 이벤트 타입 쉽게 추가
-- **모듈화된 구조**: UI, 생명주기, 추론 등 기능별 핸들러 분리
+- **계층화된 구조**: UI, 이벤트 처리, 비즈니스 로직의 명확한 분리
+- **모듈화된 설계**: 각 컴포넌트의 단일 책임 원칙 준수
+- **중앙집중식 설정**: `AppConfig`를 통한 통합 설정 관리
+- **재사용 가능한 컴포넌트**: 독립적으로 테스트하고 재사용 가능한 모듈
 - **스레드 안전성**: Streamlit 컨텍스트에서 안전한 UI 업데이트
 - **테스트 자동화**: 포괄적인 단위 테스트 및 통합 테스트
 
@@ -47,10 +49,11 @@ export AWS_DEFAULT_REGION=us-west-2
 
 ## 📋 사용법
 
-1. **웹 브라우저**에서 `http://localhost:8503` 접속
-2. **채팅 입력창**에 질문 입력
-3. **실시간 응답** 확인:
-   - 깔끔한 텍스트 스트리밍
+1. **웹 브라우저**에서 `http://localhost:8501` 접속
+2. **사이드바**에서 원하는 AI 모델 선택
+3. **채팅 입력창**에 질문 입력
+4. **실시간 응답** 확인:
+   - 깔끔한 텍스트 스트리밍 (thinking 태그 자동 필터링)
    - 도구 사용 과정 (상태 위젯으로 표시)
    - Chain of Thought (별도 확장 가능한 위젯)
 
@@ -64,8 +67,10 @@ export AWS_DEFAULT_REGION=us-west-2
 
 ### UI 특징
 
+- **버퍼링 스트리밍**: 첫 20글자를 버퍼링하여 thinking 태그 감지 후 깔끔한 출력
 - **상태 위젯**: 도구 실행 및 Chain of Thought를 별도 위젯에 표시 (완료 후 확장 가능)
 - **중복 방지**: 스트리밍 완료 후 중복 출력 없는 최종 결과 표시
+- **모델 전환**: 사이드바에서 실시간으로 AI 모델 변경 가능
 
 ## 🏛️ 아키텍처
 
@@ -103,16 +108,45 @@ export AWS_DEFAULT_REGION=us-west-2
 | `ToolUIManager` | 도구 실행 상태 및 결과 표시 |
 | `ReasoningUIManager` | 추론 과정 상태 위젯 관리 |
 
+#### 새로운 UI 레이어 (리팩토링된 구조)
+
+| 컴포넌트 | 역할 | 라인 수 |
+|----------|------|---------|
+| `StreamlitChatApp` | 메인 애플리케이션 클래스 | 29줄 |
+| `AppConfig` | 중앙집중식 설정 관리 | 46줄 |
+| `SessionManager` | Streamlit 세션 상태 관리 | 71줄 |
+| `UIManager` | UI 컴포넌트 렌더링 | 44줄 |
+| `ChatHandler` | 채팅 로직 및 스트리밍 처리 | 74줄 |
+| `MessageRenderer` | 메시지 렌더링 로직 | 41줄 |
+| `PlaceholderManager` | placeholder 생성/관리 | 31줄 |
+| `ErrorHandler` | 통합 에러 처리 | 33줄 |
+
 ## 📁 프로젝트 구조
 
 ```
 strands-agent-with-streamlit-sample/
-├── app.py                             # Streamlit 실행 진입점
+├── app.py                             # 간소화된 진입점 (13줄)
 ├── pyproject.toml                     # 프로젝트 설정
 ├── requirements.txt                   # Python 의존성 (선택)
-├── agents/
+├── uv.lock                           # UV 잠금 파일
+├──
+├── app/                              # 🆕 Streamlit UI 레이어
+│   ├── __init__.py
+│   ├── main.py                       # StreamlitChatApp 클래스
+│   ├── config.py                     # 중앙집중식 설정 관리
+│   ├── session_manager.py            # Streamlit 세션 상태 관리
+│   ├── ui_manager.py                 # UI 컴포넌트 렌더링
+│   ├── chat_handler.py               # 채팅 로직 및 스트리밍 처리
+│   └── utils/                        # UI 유틸리티 모듈
+│       ├── __init__.py
+│       ├── message_renderer.py       # 메시지 렌더링 로직
+│       ├── placeholder_manager.py    # Streamlit placeholder 관리
+│       └── error_handler.py          # 통합 에러 처리
+│
+├── agents/                           # 비즈니스 로직 레이어 (기존 유지)
 │   └── bedrock_agent.py              # Strands Agent 통합 및 조정
-├── handlers/
+│
+├── handlers/                         # 이벤트 처리 레이어 (기존 유지)
 │   ├── __init__.py
 │   ├── event_handlers.py             # 이벤트 핸들러 아키텍처
 │   ├── lifecycle_handlers.py         # 생명주기/로깅 핸들러
@@ -124,7 +158,9 @@ strands-agent-with-streamlit-sample/
 │       ├── reasoning.py             # 추론 과정 표시
 │       ├── state.py                 # UI 상태 관리
 │       ├── tools.py                 # 도구 실행 표시
-│       └── utils.py                 # 유틸리티 함수
+│       ├── utils.py                 # 유틸리티 함수
+│       └── placeholders.py          # placeholder 유틸리티
+│
 ├── tests/
 │   ├── test_streamlit_flow.py        # UI 플로우 테스트
 │   └── test_thread_safety.py         # 스레드 안전성 테스트
@@ -153,10 +189,22 @@ pytest tests -v
 5. **Pull Request** 생성
 
 ### 개발 가이드라인
-- 새로운 핸들러는 테스트와 함께 제출
+
+#### 코드 품질
+- **단일 책임 원칙**: 각 클래스와 함수는 하나의 명확한 책임만 가져야 함
+- **모듈 크기**: 파일당 80줄 이하 권장 (복잡한 로직 제외)
+- **타입 힌트**: 모든 함수와 메서드에 타입 힌트 추가
+- **코드 스타일**: PEP 8 준수
+
+#### 아키텍처
+- **계층 분리**: UI 레이어(`app/`)는 이벤트 처리 레이어(`handlers/`)만 사용
+- **설정 중앙화**: 새로운 설정은 `AppConfig`에 추가
+- **에러 처리**: `ErrorHandler`를 통한 통합 에러 처리 사용
+
+#### 테스트
+- 새로운 컴포넌트는 테스트와 함께 제출
 - 기존 테스트가 모두 통과해야 함
-- 코드 스타일: PEP 8 준수
-- 문서화: 새로운 기능은 README 업데이트
+- 각 모듈별로 독립적인 단위 테스트 작성
 
 ## 📄 라이선스
 
