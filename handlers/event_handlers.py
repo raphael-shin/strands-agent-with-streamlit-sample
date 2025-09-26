@@ -94,7 +94,7 @@ class EventRegistry:
     def _extract_event_type(self, event: Dict[str, Any]) -> str:
         """Infer the event type from the payload."""
         # Priority: data > current_tool_use > reasoningText > fallback to first key
-        priority_events = ["data", "current_tool_use", "tool_result", "reasoningText", "result", "force_stop"]
+        priority_events = ["data", "current_tool_use", "tool_result", "reasoning", "reasoningText", "redactedContent", "result", "force_stop"]
         
         for priority_event in priority_events:
             if priority_event in event:

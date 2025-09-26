@@ -129,7 +129,7 @@ class BedrockAgent:
                         break
 
                     # Abort if the agent is unresponsive for too long
-                    if elapsed > 30:
+                    if elapsed > 60:
                         timeout_event = {"force_stop": True, "force_stop_reason": "Timeout"}
                         yield timeout_event
                         break

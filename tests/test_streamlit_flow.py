@@ -14,24 +14,57 @@ pytest.importorskip("strands")
 from agents.bedrock_agent import BedrockAgent
 from handlers import ui_handlers as ui_handlers_module
 from handlers.ui_handlers import StreamlitUIHandler, StreamlitUIState
+from handlers.ui import messages as messages_module
+from handlers.ui import placeholders as placeholders_module
+from handlers.ui import reasoning as reasoning_module
+from handlers.ui import tools as tools_module
+from handlers.ui import utils as utils_module
 
 
 class MockPlaceholder:
     """Simple mock that mimics Streamlit placeholders."""
+
     def __init__(self, name):
         self.name = name
         self.content = ""
         self.markdown_calls = []
         self.empty_calls = 0
-    
+
     def markdown(self, content):
         self.content = content
         self.markdown_calls.append(content)
-    
+
     def empty(self):
         self.empty_calls += 1
         self.content = ""
 
+    def container(self):
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+
+class MockExpander:
+    """Mock replacement for st.expander supporting empty() calls."""
+
+    def __init__(self, name):
+        self.name = name
+        self.children = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+    def empty(self):
+        placeholder = MockPlaceholder(f"{self.name}-child-{len(self.children)}")
+        self.children.append(placeholder)
+        return placeholder
 
 class TestStreamlitUIState:
     """Tests that validate StreamlitUIState behaviour."""
@@ -47,7 +80,7 @@ class TestStreamlitUIState:
         ui_state.tool_placeholder = tool_placeholder
         
         # Seed message state
-        ui_state.raw_response = "test response"
+        ui_state.message.raw_response = "test response"
         ui_state.tool_map = {"tool1": "data"}
         
         # Call reset
@@ -56,7 +89,7 @@ class TestStreamlitUIState:
         # Placeholders remain while state resets
         assert ui_state.response_placeholder is response_placeholder
         assert ui_state.tool_placeholder is tool_placeholder
-        assert ui_state.raw_response == ""
+        assert ui_state.message.raw_response == ""
         assert ui_state.tool_map == {}
 
 
@@ -80,6 +113,34 @@ class TestStreamlitUIHandler:
             self.chain_placeholder,
             self.response_placeholder
         )
+        # Provide a shared Streamlit mock for all UI modules
+        streamlit_mock = Mock()
+
+        def _make_expander(label, *args, **kwargs):
+            return MockExpander(label)
+
+        def _make_status(label, *args, **kwargs):
+            status = Mock()
+            status.update = Mock()
+            status.label = label
+            return status
+
+        streamlit_mock.expander.side_effect = _make_expander
+        streamlit_mock.status.side_effect = _make_status
+        streamlit_mock.empty.side_effect = lambda *a, **k: MockPlaceholder("empty")
+        streamlit_mock.json = Mock()
+        streamlit_mock.code = Mock()
+        streamlit_mock.write = Mock()
+        streamlit_mock.markdown = Mock()
+
+        ui_handlers_module.st = streamlit_mock
+        reasoning_module.st = streamlit_mock
+        tools_module.st = streamlit_mock
+        messages_module.st = streamlit_mock
+        utils_module.st = streamlit_mock
+        placeholders_module.st = streamlit_mock
+
+        self.streamlit_mock = streamlit_mock
     
     def test_can_handle_ui_events(self):
         """The handler should accept relevant event types."""
@@ -98,39 +159,52 @@ class TestStreamlitUIHandler:
         self.handler.handle(event)
         
         # Ensure state and placeholder were touched
-        assert "Hello World" in self.ui_state.raw_response
+        assert "Hello World" in self.ui_state.message.raw_response
         assert len(self.response_placeholder.markdown_calls) > 0
         assert "Hello World" in self.response_placeholder.markdown_calls[-1]
     
     def test_handle_reasoning_event(self):
         """Reasoning events should append to the running text."""
-        # Build a fake status object
-        mock_status = Mock()
-        mock_status.empty.return_value = Mock()
-        
-        # Patch container context manager to avoid Streamlit calls
-        self.status_placeholder.container = Mock()
-        self.status_placeholder.container.return_value.__enter__ = Mock(return_value=Mock())
-        self.status_placeholder.container.return_value.__exit__ = Mock(return_value=None)
-        
-        # Patch st.status to return the mock
-        ui_handlers_module.st = Mock()
-        ui_handlers_module.st.status.return_value = mock_status
-        
         # Process a reasoning event
         event = {"reasoningText": "Thinking..."}
         self.handler.handle(event)
-        
+
         # Reasoning text should accumulate
-        assert "Thinking..." in self.ui_state.reasoning_text
-    
+        assert "Thinking..." in self.ui_state.reasoning.text
+        assert self.ui_state.reasoning.status is not None
+        self.ui_state.reasoning.status.update.assert_called_with(
+            label="🧠 Reasoning in progress…",
+            state="running",
+            expanded=True,
+        )
+
+    def test_tool_result_does_not_backfill_input(self):
+        """tool_result 이벤트만으로는 입력이 채워지지 않는다."""
+        self.handler.handle({
+            "current_tool_use": {
+                "toolUseId": "tool-1",
+                "name": "calculator",
+            }
+        })
+
+        self.handler.handle({
+            "tool_result": {
+                "toolUseId": "tool-1",
+                "output": "2",
+                "input": {"expression": "1+1"},
+            }
+        })
+
+        entry = self.ui_state.tool_map["tool-1"]
+        assert entry["input"] is None
+
     def test_handle_force_stop_event(self):
         """Force-stop events should store the error message."""
         event = {"force_stop": True, "force_stop_reason": "Test error"}
         self.handler.handle(event)
         
         # Verify the error was captured and rendered
-        assert self.ui_state.force_stop_error == "Error: Test error"
+        assert self.ui_state.message.force_stop_error == "Error: Test error"
         assert len(self.response_placeholder.markdown_calls) > 0
         assert "Test error" in self.response_placeholder.markdown_calls[-1]
     
@@ -146,7 +220,82 @@ class TestStreamlitUIHandler:
         # Handler should return None (meaning handled internally)
         assert result is None
         # No state update occurs without a placeholder
-        assert "Test data" not in self.ui_state.raw_response
+        assert "Test data" not in self.ui_state.message.raw_response
+
+    def test_metrics_backfills_input_when_tool_result_missing(self):
+        """Agent metrics should backfill tool input when the result event lacks it."""
+
+        class FakeToolMetrics:
+            def __init__(self, tool):
+                self.tool = tool
+
+        class FakeMetrics:
+            def __init__(self, tool_metrics):
+                self.tool_metrics = tool_metrics
+
+        class FakeResult:
+            def __init__(self, metrics):
+                self.metrics = metrics
+                self.message = {"content": []}
+
+        # Register tool invocation without input information
+        self.handler.handle({
+            "current_tool_use": {
+                "toolUseId": "tool-2",
+                "name": "calculator",
+            }
+        })
+
+        tool_info = {
+            "toolUseId": "tool-2",
+            "name": "calculator",
+            "input": {"expression": "2+2"},
+        }
+        metrics = FakeMetrics({"calculator": FakeToolMetrics(tool_info)})
+        fake_result = FakeResult(metrics)
+
+        self.handler.handle({"result": fake_result})
+
+        entry = self.ui_state.tool_map["tool-2"]
+        assert entry["input"] == {"expression": "2+2"}
+        assert entry["input_is_json"] is True
+
+    def test_finalize_updates_progress_blocks(self):
+        """Finalization should complete status blocks and render content."""
+
+        # Simulate streaming events
+        self.handler.handle({"reasoningText": "Reasoning chunk"})
+        self.handler.handle({"current_tool_use": {"toolUseId": "tool-3", "name": "calculator"}})
+        self.handler.handle({"tool_result": {"toolUseId": "tool-3", "output": "4"}})
+        self.handler.handle({"data": "Final answer"})
+
+        tool_info = {"toolUseId": "tool-3", "name": "calculator", "input": {"expression": "2+2"}}
+        metrics = type("FakeMetrics", (), {"tool_metrics": {"calculator": type("FakeToolMetrics", (), {"tool": tool_info})()}})()
+        fake_result = type("FakeResult", (), {"metrics": metrics, "message": {"content": [{"text": "Final answer"}]}})()
+
+        self.handler.handle({"result": fake_result})
+        self.handler.finalize_response()
+
+        assert self.ui_state.reasoning.status is not None
+        self.ui_state.reasoning.status.update.assert_called_with(
+            label="✅ Reasoning Complete",
+            state="complete",
+            expanded=False,
+        )
+
+        expander_labels = [call.args[0] for call in self.streamlit_mock.expander.call_args_list]
+        assert "🔧 Tool Usage: calculator ⏳" in expander_labels
+        assert expander_labels[-1] == "✅ Tool Usage: calculator"
+
+        running_status_call = None
+        for call in self.streamlit_mock.status.call_args_list:
+            if call.kwargs.get("state") == "running":
+                running_status_call = call
+                break
+        assert running_status_call is not None
+        assert self.ui_state.tools.placeholders == {}
+
+        assert self.response_placeholder.markdown_calls[-1] == "Final answer"
 
 
 class TestBedrockAgentIntegration:
@@ -212,7 +361,7 @@ class TestBedrockAgentIntegration:
         
         # Ensure raw response and placeholder were updated
         ui_state = self.agent.get_ui_state()
-        assert "Test streaming text" in ui_state.raw_response
+        assert "Test streaming text" in ui_state.message.raw_response
         assert len(response_placeholder.markdown_calls) > 0
 
 

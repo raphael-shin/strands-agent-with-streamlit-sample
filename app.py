@@ -41,7 +41,7 @@ def run_app() -> None:
 
     # Configure Streamlit page
     st.set_page_config(
-        page_title="Bedrock Agent Chat",
+        page_title="Strands Agent Chat",
         page_icon="🤖",
         layout="wide",
     )
@@ -51,10 +51,10 @@ def run_app() -> None:
         st.header("🔧 Model Settings")
         
         available_models = [
-            "anthropic.claude-sonnet-4-20250514-v1:0",
+            "us.amazon.nova-pro-v1:0",
+            "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "openai.gpt-oss-120b-1:0", 
             "openai.gpt-oss-20b-1:0",
-            "amazon.nova-pro-v1:0"
         ]
         
         selected_model = st.selectbox(
