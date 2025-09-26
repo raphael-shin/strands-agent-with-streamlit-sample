@@ -12,10 +12,11 @@ from .state import StreamlitUIState
 
 
 def render_tool_calls(tool_calls: Iterable[Dict[str, Any]]) -> None:
-    """Render completed tool calls as collapsible expanders."""
+    """Render completed tool calls as simple status widgets."""
     for index, call in enumerate(tool_calls, start=1):
         title_name = call.get("name") or f"Tool {index}"
-        with st.expander(f"✅ Tool Usage: {title_name}", expanded=False):
+
+        with st.status(f"✅ Tool: {title_name}", state="complete", expanded=False):
             tool_use_id = call.get("tool_use_id")
             if tool_use_id:
                 st.write(f"**Tool ID:** {tool_use_id}")
@@ -54,13 +55,13 @@ class ToolUIManager:
 
     # ------------------------------------------------------------------
     def finalize(self) -> None:
-        """Clear transient placeholders once streaming completes."""
-        for placeholder in list(self.ui_state.tools.placeholders.values()):
-            safe_empty(placeholder)
-        self.ui_state.tools.placeholders.clear()
+        """Finalize tool status to complete state."""
+        # Mark all tools as complete
+        for tool_entry in self.ui_state.assistant_message.get("tool_calls", []):
+            self._render_tool_entry(tool_entry, status="complete")
 
-        safe_empty(self.ui_state.tool_placeholder)
-        self.ui_state.tool_placeholder = None
+        # Keep placeholders for final display
+        # Note: Don't clear placeholders here as they contain the final tool results
 
     def mark_force_stop(self) -> None:
         for tool_entry in self.ui_state.assistant_message.get("tool_calls", []):
@@ -148,41 +149,33 @@ class ToolUIManager:
             "complete": "✅",
             "error": "❌",
         }.get(status, "🔧")
-        title_suffix = " ⏳" if status == "running" else ""
         title_name = tool_entry.get("name") or "Tool"
-        label = f"{title_prefix} Tool Usage: {title_name}{title_suffix}"
-        expanded = status == "running"
+        label = f"{title_prefix} Tool: {title_name}"
 
+        # Simple status without expander nesting
         placeholder.empty()
         with placeholder.container():
-            expander = st.expander(label, expanded=expanded)
-            with expander:
-                if status == "running":
-                    st.status(
-                        "Tool execution in progress…",
-                        state="running",
-                        expanded=True,
-                    )
-                elif status == "error":
-                    st.status(
-                        "Tool execution aborted",
-                        state="error",
-                        expanded=False,
-                    )
+            if status == "running":
+                status_widget = st.status(f"{label}...", state="running", expanded=False)
+            elif status == "error":
+                status_widget = st.status(f"{label} - Error", state="error", expanded=False)
+            else:
+                # Complete status - fill with content
+                status_widget = st.status(label, state="complete", expanded=False)
+                with status_widget:
+                    tool_use_id = tool_entry.get("tool_use_id")
+                    if tool_use_id:
+                        st.write(f"**Tool ID:** {tool_use_id}")
 
-                tool_use_id = tool_entry.get("tool_use_id")
-                if tool_use_id:
-                    st.write(f"**Tool ID:** {tool_use_id}")
+                    input_value = tool_entry.get("input")
+                    if input_value is not None:
+                        st.write("**Input:**")
+                        utils.render_tool_value(input_value, tool_entry.get("input_is_json", False))
 
-                input_value = tool_entry.get("input")
-                if input_value is not None:
-                    st.write("**Input:**")
-                    utils.render_tool_value(input_value, tool_entry.get("input_is_json", False))
-
-                result_value = tool_entry.get("result")
-                if result_value is not None:
-                    st.write("**Result:**")
-                    utils.render_tool_value(result_value, tool_entry.get("result_is_json", False))
+                    result_value = tool_entry.get("result")
+                    if result_value is not None:
+                        st.write("**Result:**")
+                        utils.render_tool_value(result_value, tool_entry.get("result_is_json", False))
 
     def _ensure_tool_placeholder(self, tool_entry: Dict[str, Any]) -> Optional[Any]:
         key = tool_entry.get("tool_use_id") or id(tool_entry)

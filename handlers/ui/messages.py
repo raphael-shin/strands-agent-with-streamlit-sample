@@ -24,8 +24,9 @@ def render_chain_of_thought(chain_of_thought: Optional[str]) -> None:
 class MessageUIManager:
     """Handle token streaming, final results, and error reporting."""
 
-    def __init__(self, ui_state: StreamlitUIState):
+    def __init__(self, ui_state: StreamlitUIState, cot_manager=None):
         self.ui_state = ui_state
+        self.cot_manager = cot_manager
 
     # ------------------------------------------------------------------
     def can_handle(self, event: Dict[str, Any]) -> bool:
@@ -62,9 +63,26 @@ class MessageUIManager:
 
         if not message_state.raw_response and message_state.final_message:
             message_state.raw_response = self._extract_text_from_message(message_state.final_message)
+            # Don't set filtered_response = raw_response, let it be processed properly
 
-        final_text, chain_of_thought = utils.parse_model_response(message_state.raw_response)
-        display_text = final_text or "*Computation completed.*"
+        # Use filtered response for final display (no thinking blocks)
+        display_text = self._get_filtered_display_text()
+
+        # If no display text, try to extract from final message
+        if not display_text and message_state.final_message:
+            raw_text = self._extract_text_from_message(message_state.final_message)
+            if raw_text and self.cot_manager:
+                # Apply COT filtering to final message text
+                import re
+                thinking_pattern = re.compile(r'<thinking>.*?</thinking>', re.DOTALL)
+                display_text = thinking_pattern.sub('', raw_text).strip()
+
+        # Fallback only if truly no content
+        if not display_text:
+            display_text = "*No response generated.*"
+
+        # Extract chain of thought from raw response
+        _, chain_of_thought = utils.parse_model_response(message_state.raw_response)
 
         assistant_message["text"] = display_text
         assistant_message["chain_of_thought"] = chain_of_thought
@@ -89,16 +107,28 @@ class MessageUIManager:
 
     # ------------------------------------------------------------------
     def _handle_data(self, data_chunk: str) -> None:
-        placeholder = self.ui_state.response_placeholder
-        if not data_chunk or not placeholder:
+        if not data_chunk:
             return
 
+        # Store raw response for later processing
         self.ui_state.message.raw_response += data_chunk
-        partial_text = utils.strip_partial_thinking(self.ui_state.message.raw_response)
-        if partial_text:
-            placeholder.markdown(f"{partial_text}▌")
+
+        # Filter this chunk BEFORE updating COT state
+        if self.cot_manager:
+            filtered_chunk = self.cot_manager.filter_thinking_from_data(data_chunk)
         else:
-            placeholder.markdown("▌")
+            filtered_chunk = data_chunk  # Fallback
+
+        self.ui_state.message.filtered_response += filtered_chunk
+
+        # Display the accumulated filtered text if placeholder exists
+        placeholder = self.ui_state.response_placeholder
+        if placeholder:
+            display_text = self.ui_state.message.filtered_response.strip()
+            if display_text:
+                placeholder.markdown(f"{display_text}▌")
+            else:
+                placeholder.markdown("▌")
 
     def _handle_result(self, agent_result: Any) -> None:
         if hasattr(agent_result, "message") and agent_result.message:
@@ -123,6 +153,30 @@ class MessageUIManager:
                 st.markdown(text)
         else:
             safe_markdown(self.ui_state.response_placeholder, text)
+
+    def _get_filtered_display_text(self) -> str:
+        """Get display text with thinking blocks removed."""
+        # Use the filtered response that was built during streaming
+        text = self.ui_state.message.filtered_response.strip()
+
+        # Additional cleanup for any remaining thinking tags
+        if text:
+            import re
+            # Remove complete thinking blocks
+            thinking_pattern = re.compile(r'<thinking>.*?</thinking>', re.DOTALL)
+            text = thinking_pattern.sub('', text).strip()
+
+            # Remove any partial thinking tags (opening tags without closing)
+            if '<thinking>' in text:
+                text = text.split('<thinking>')[0].strip()
+
+            # Remove any orphaned closing tags
+            if '</thinking>' in text:
+                parts = text.split('</thinking>')
+                if len(parts) > 1:
+                    text = ''.join(parts[1:]).strip()
+
+        return text
 
     def _extract_text_from_message(self, message: Any) -> str:
         if not message:

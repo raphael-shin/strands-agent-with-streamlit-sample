@@ -30,27 +30,21 @@ class ReasoningUIManager:
         reasoning_state = self.ui_state.reasoning
         status = reasoning_state.status
         if status:
-            if reasoning_state.text or chain_of_thought:
+            final_content = reasoning_state.text or chain_of_thought
+            if final_content:
+                with status:
+                    st.markdown(final_content)
                 status.update(
-                    label="✅ Reasoning Complete",
+                    label="🧠 Reasoning",
                     state="complete",
                     expanded=False,
                 )
             else:
                 status.update(
-                    label="No reasoning captured",
+                    label="🧠 No reasoning captured",
                     state="complete",
                     expanded=False,
                 )
-
-        placeholder = reasoning_state.content_placeholder
-        if placeholder:
-            placeholder.empty()
-            with placeholder:
-                if reasoning_state.text:
-                    st.markdown(reasoning_state.text)
-                if chain_of_thought:
-                    st.markdown(chain_of_thought)
 
     def mark_force_stop(self) -> None:
         status = self.ui_state.reasoning.status
@@ -90,7 +84,7 @@ class ReasoningUIManager:
             self._ensure_reasoning_status()
 
     def _ensure_reasoning_status(self) -> None:
-        if self.ui_state.reasoning.expander:
+        if self.ui_state.reasoning.status:
             return
 
         parent = self.ui_state.chain_placeholder or self.ui_state.status_placeholder
@@ -98,15 +92,9 @@ class ReasoningUIManager:
             return
 
         with parent.container():
-            expander = st.expander("🧠 Reasoning", expanded=False)
-            with expander:
-                status = st.status("🧠 Reasoning in progress…", expanded=False)
-                content_placeholder = st.empty()
+            status = st.status("🧠 Reasoning...", expanded=False)
 
-        reasoning_state = self.ui_state.reasoning
-        reasoning_state.expander = expander
-        reasoning_state.status = status
-        reasoning_state.content_placeholder = content_placeholder
+        self.ui_state.reasoning.status = status
 
     def _contains_reasoning_event(self, event: Dict[str, Any]) -> bool:
         if "event" not in event:

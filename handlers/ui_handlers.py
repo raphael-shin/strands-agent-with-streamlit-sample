@@ -8,6 +8,7 @@ import streamlit as st
 
 from .event_handlers import EventHandler, EventType
 from .ui import (
+    COTUIManager,
     MessageUIManager,
     ReasoningUIManager,
     StreamlitUIState,
@@ -42,13 +43,19 @@ class StreamlitUIHandler(EventHandler):
     def __init__(self, ui_state: StreamlitUIState):
         self.ui_state = ui_state
         self.reasoning_manager = ReasoningUIManager(ui_state)
+        self.cot_manager = COTUIManager(ui_state)
         self.tool_manager = ToolUIManager(ui_state)
-        self.message_manager = MessageUIManager(ui_state)
+        self.message_manager = MessageUIManager(ui_state, self.cot_manager)
         self._managers = (
             self.reasoning_manager,
+            self.cot_manager,
             self.tool_manager,
             self.message_manager,
         )
+
+    def reset_for_new_conversation(self) -> None:
+        """Reset all managers for a new conversation."""
+        self.cot_manager.reset_for_new_conversation()
 
     # ------------------------------------------------------------------
     def set_placeholders(self, status_placeholder, tool_placeholder, chain_placeholder, response_placeholder):
@@ -76,12 +83,19 @@ class StreamlitUIHandler(EventHandler):
 
     # ------------------------------------------------------------------
     def handle(self, event: Dict[str, Any]) -> None:
+        # Handle data events: COT manager first (to track state), then message manager
+        if "data" in event:
+            self.cot_manager.handle(event)
+            self.message_manager.handle(event)
+
+        # Handle other events
         for manager in self._managers:
-            if manager.can_handle(event):
+            if manager.can_handle(event) and "data" not in event:
                 manager.handle(event)
 
         if event.get("force_stop"):
             self.reasoning_manager.mark_force_stop()
+            self.cot_manager.mark_force_stop()
             self.tool_manager.mark_force_stop()
 
     # ------------------------------------------------------------------
@@ -96,6 +110,10 @@ class StreamlitUIHandler(EventHandler):
         tool_calls = assistant_message.get("tool_calls") or []
 
         self.tool_manager.finalize()
+
+        # Clear the streaming response placeholder to avoid duplicate display
+        if self.ui_state.response_placeholder:
+            self.ui_state.response_placeholder.empty()
 
         render_parent = final_container
         if render_parent is None and self.ui_state.message_container:
@@ -124,5 +142,6 @@ class StreamlitUIHandler(EventHandler):
                     self.message_manager.render_final_text(display_text, None)
 
         self.reasoning_manager.finalize(chain_of_thought)
+        self.cot_manager.finalize(chain_of_thought)
 
         return assistant_message

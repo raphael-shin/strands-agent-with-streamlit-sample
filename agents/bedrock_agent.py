@@ -93,8 +93,16 @@ class BedrockAgent:
             except queue.Empty:
                 break
 
-        # Reset the UI state while reusing the existing instance
-        self.ui_state.reset()
+        # UI state is already reset by app.py before calling stream_response
+        # Don't reset again here to preserve placeholder settings
+        # self.ui_state.reset()  # Commented out to preserve placeholders
+
+        # But we do need to reset the COT manager's internal state
+        ui_handler = None
+        for handler in self.event_registry._handlers:
+            if hasattr(handler, 'reset_for_new_conversation'):
+                handler.reset_for_new_conversation()
+                break
 
         def run_agent():
             try:

@@ -7,10 +7,9 @@
 ## 🎯 주요 특징
 
 ### ✨ 완전한 Strands Agent 통합
-- **실시간 스트리밍**: 텍스트 응답의 실시간 표시
-- **도구 사용 시각화**: 계산기, 날씨 등 도구 실행 과정 표시
-- **추론 과정 표시**: Chain of Thought 및 추론 단계 시각화
-- **에러 처리**: 안정적인 예외 처리 및 사용자 알림
+- **실시간 스트리밍**: 텍스트 응답의 실시간 표시 (버퍼링 방식으로 깔끔한 출력)
+- **도구 사용 시각화**: 계산기, 날씨 등 도구 실행 과정을 상태 위젯으로 표시
+- **Chain of Thought 처리**: `<thinking>` 블록을 자동 감지하여 별도 상태 위젯에 표시
 
 ### 🏗️ 확장 가능한 아키텍처
 - **이벤트 핸들러 시스템**: 새로운 이벤트 타입 쉽게 추가
@@ -48,20 +47,25 @@ export AWS_DEFAULT_REGION=us-west-2
 
 ## 📋 사용법
 
-1. **웹 브라우저**에서 `http://localhost:8501` 접속
+1. **웹 브라우저**에서 `http://localhost:8503` 접속
 2. **채팅 입력창**에 질문 입력
 3. **실시간 응답** 확인:
-   - 텍스트 스트리밍
-   - 도구 사용 과정
-   - 추론 단계 (Chain of Thought)
+   - 깔끔한 텍스트 스트리밍
+   - 도구 사용 과정 (상태 위젯으로 표시)
+   - Chain of Thought (별도 확장 가능한 위젯)
 
 ### 예시 질문
 
 ```
-계산: "25 * 4 + 10은 얼마야?"
+계산: "계산기 도구를 활용해서 1+1을 계산해주세요"
 날씨: "서울 날씨 어때?"
-추론: "복잡한 수학 문제를 단계별로 풀어줘"
+복잡한 계산: "1+100을 계산해주세요"
 ```
+
+### UI 특징
+
+- **상태 위젯**: 도구 실행 및 Chain of Thought를 별도 위젯에 표시 (완료 후 확장 가능)
+- **중복 방지**: 스트리밍 완료 후 중복 출력 없는 최종 결과 표시
 
 ## 🏛️ 아키텍처
 
@@ -90,6 +94,15 @@ export AWS_DEFAULT_REGION=us-west-2
 | `LoggingHandler` | 구조화된 로깅 | 80 |
 | `DebugHandler` | 디버깅 정보 수집 | 95 (낮음) |
 
+#### UI 관리자 시스템
+
+| 관리자 | 역할 |
+|--------|------|
+| `MessageUIManager` | 메시지 스트리밍 및 최종 렌더링 |
+| `COTUIManager` | Chain of Thought 감지 및 필터링 |
+| `ToolUIManager` | 도구 실행 상태 및 결과 표시 |
+| `ReasoningUIManager` | 추론 과정 상태 위젯 관리 |
+
 ## 📁 프로젝트 구조
 
 ```
@@ -103,7 +116,15 @@ strands-agent-with-streamlit-sample/
 │   ├── __init__.py
 │   ├── event_handlers.py             # 이벤트 핸들러 아키텍처
 │   ├── lifecycle_handlers.py         # 생명주기/로깅 핸들러
-│   └── ui_handlers.py                # Streamlit UI 전용 핸들러
+│   ├── ui_handlers.py                # Streamlit UI 전용 핸들러
+│   └── ui/                          # UI 관리자 모듈
+│       ├── __init__.py
+│       ├── cot.py                   # Chain of Thought 처리
+│       ├── messages.py              # 메시지 스트리밍
+│       ├── reasoning.py             # 추론 과정 표시
+│       ├── state.py                 # UI 상태 관리
+│       ├── tools.py                 # 도구 실행 표시
+│       └── utils.py                 # 유틸리티 함수
 ├── tests/
 │   ├── test_streamlit_flow.py        # UI 플로우 테스트
 │   └── test_thread_safety.py         # 스레드 안전성 테스트

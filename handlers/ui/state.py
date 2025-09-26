@@ -21,9 +21,15 @@ class PlaceholderState:
 class ReasoningState:
     """Reasoning-specific UI state."""
 
-    expander: Any = None
     status: Any = None
-    content_placeholder: Any = None
+    text: str = ""
+
+
+@dataclass
+class COTState:
+    """Chain of Thought UI state."""
+
+    status: Any = None
     text: str = ""
 
 
@@ -39,6 +45,7 @@ class MessageState:
     """State associated with streaming and final messages."""
 
     raw_response: str = ""
+    filtered_response: str = ""
     final_message: Any = None
     force_stop_error: str | None = None
     assistant_appended: bool = False
@@ -58,6 +65,7 @@ class StreamlitUIState:
 
     placeholders: PlaceholderState = field(default_factory=PlaceholderState)
     reasoning: ReasoningState = field(default_factory=ReasoningState)
+    cot: COTState = field(default_factory=COTState)
     tools: ToolRenderState = field(default_factory=ToolRenderState)
     message: MessageState = field(default_factory=MessageState)
     assistant_message: Dict[str, Any] = field(default_factory=_empty_assistant_message)
@@ -66,6 +74,7 @@ class StreamlitUIState:
     def reset(self) -> None:
         """Reset per-stream state while keeping placeholder references."""
         self.reasoning = ReasoningState()
+        self.cot = COTState()
         self.tools = ToolRenderState()
         self.message = MessageState()
         self.assistant_message = _empty_assistant_message()
