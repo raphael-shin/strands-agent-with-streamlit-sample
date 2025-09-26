@@ -1,5 +1,6 @@
 """Lifecycle and logging-related event handlers."""
 from typing import Any, Dict, Optional
+import os
 
 from .event_handlers import EventHandler, EventType
 
@@ -58,7 +59,7 @@ class LoggingHandler(EventHandler):
     """Structured logging handler for every event."""
 
     def __init__(self, log_level: str = "INFO"):
-        pass
+        self.debug_logging = self._get_debug_setting()
 
     @property
     def priority(self) -> int:
@@ -68,38 +69,36 @@ class LoggingHandler(EventHandler):
         """Log every event regardless of type."""
         return True
     
+    def _get_debug_setting(self) -> bool:
+        """Get debug logging setting from environment variables."""
+        # Check .env file first
+        try:
+            from pathlib import Path
+            env_file = Path(".env")
+            if env_file.exists():
+                with open(env_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('DEBUG_LOGGING='):
+                            value = line.split('=', 1)[1].strip().strip('"').strip("'")
+                            return value.lower() in ('true', '1', 'yes', 'on')
+        except Exception:
+            pass
+
+        # Fallback to system environment variable
+        debug_env = os.environ.get('DEBUG_LOGGING', 'false')
+        return debug_env.lower() in ('true', '1', 'yes', 'on')
+
     def handle(self, event: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Log the event with structured metadata."""
-        # Debug: print complete event structure
-        print(f"\n🔍 EVENT: {event}")
-        
-        # Check for reasoningContent in event structure
-        if "event" in event:
-            event_data = event["event"]
-            if "contentBlockDelta" in event_data:
-                delta_data = event_data["contentBlockDelta"]
-                delta = delta_data.get("delta", {})
-                if "SDK_UNKNOWN_MEMBER" in delta:
-                    unknown_member = delta["SDK_UNKNOWN_MEMBER"]
-                    if unknown_member.get("name") == "reasoningContent":
-                        print("🧠 REASONING CONTENT DETECTED!")
-        
-        # Print complete response when it's finished
-        if "result" in event:
-            result = event["result"]
-            if hasattr(result, "message") and result.message:
-                message = result.message
-                if "content" in message:
-                    content = message["content"]
-                    if isinstance(content, list) and len(content) > 0:
-                        full_text = content[0].get("text", "")
-                        if full_text:
-                            print("\n" + "="*80)
-                            print("🤖 COMPLETE MODEL RESPONSE:")
-                            print("="*80)
-                            print(full_text)
-                            print("="*80 + "\n")
-        
+        # Only show debug events if DEBUG_LOGGING is enabled
+        if self.debug_logging:
+            print(f"\n🔍 EVENT: {event}")
+
+        # Reasoning content detection removed for cleaner output
+
+        # Complete response logging removed for cleaner output
+
         return None
 
 

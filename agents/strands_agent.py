@@ -31,7 +31,7 @@ def weather(location: str) -> str:
     """Get weather information for a location"""
     return f"Weather in {location}: Sunny, 22°C (Mock data)"
 
-class BedrockAgent:
+class StrandsAgent:
     def __init__(self, region: str = "us-west-2", model_id: str = "openai.gpt-oss-20b-1:0"):
         self.event_queue = queue.Queue()
         self.event_registry = EventRegistry()

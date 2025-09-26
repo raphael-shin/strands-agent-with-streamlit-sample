@@ -3,7 +3,7 @@
 from typing import List, Dict, Any, Optional
 import streamlit as st
 
-from agents.bedrock_agent import BedrockAgent
+from agents.strands_agent import StrandsAgent
 
 
 class SessionManager:
@@ -29,7 +29,7 @@ class SessionManager:
         return st.session_state.messages
 
     @property
-    def agent(self) -> Optional[BedrockAgent]:
+    def agent(self) -> Optional[StrandsAgent]:
         """Get the current agent from session state."""
         return st.session_state.agent
 
@@ -47,13 +47,13 @@ class SessionManager:
         # First time initialization
         if st.session_state.current_model is None:
             st.session_state.current_model = selected_model
-            st.session_state.agent = BedrockAgent(model_id=selected_model)
+            st.session_state.agent = StrandsAgent(model_id=selected_model)
             return True
 
         # Model changed - reset session
         if st.session_state.current_model != selected_model:
             st.session_state.current_model = selected_model
-            st.session_state.agent = BedrockAgent(model_id=selected_model)
+            st.session_state.agent = StrandsAgent(model_id=selected_model)
             st.session_state.messages = []
             st.rerun()
             return True

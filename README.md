@@ -35,17 +35,50 @@ uv sync
 uv run streamlit run app.py
 ```
 
-### AWS 자격 증명 설정
+### 환경 변수 설정
 
+#### 1. 환경 변수 파일 생성
+```bash
+# 샘플 환경 변수 파일을 복사하여 .env 파일 생성
+cp env/local.env .env
+```
+
+#### 2. .env 파일 수정
+```bash
+# .env 파일을 열고 실제 값으로 수정
+vi .env
+```
+
+`.env` 파일 예시:
+```env
+# AWS Credentials (required for Bedrock access)
+AWS_ACCESS_KEY_ID=your_actual_access_key
+AWS_SECRET_ACCESS_KEY=your_actual_secret_key
+AWS_DEFAULT_REGION=us-west-2
+
+# Application Settings
+DEBUG_LOGGING=false
+LOG_LEVEL=INFO
+
+# Default model selection (optional)
+DEFAULT_MODEL=us.amazon.nova-pro-v1:0
+```
+
+#### 3. 대안: 시스템 환경변수 사용
 ```bash
 # AWS CLI 설정
 aws configure
 
-# 또는 환경 변수 설정
+# 또는 환경 변수 직접 설정
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
 export AWS_DEFAULT_REGION=us-west-2
+
+# 디버그 로깅 활성화 (선택사항)
+export DEBUG_LOGGING=true
 ```
+
+> **참고**: `.env` 파일의 설정이 시스템 환경변수보다 우선순위가 낮습니다. 시스템 환경변수가 설정되어 있으면 해당 값이 사용됩니다.
 
 ## 📋 사용법
 
@@ -134,6 +167,7 @@ strands-agent-with-streamlit-sample/
 │   ├── __init__.py
 │   ├── main.py                       # StreamlitChatApp 클래스
 │   ├── config.py                     # 중앙집중식 설정 관리
+│   ├── env_loader.py                 # 환경변수 로딩 (.env 지원)
 │   ├── session_manager.py            # Streamlit 세션 상태 관리
 │   ├── ui_manager.py                 # UI 컴포넌트 렌더링
 │   ├── chat_handler.py               # 채팅 로직 및 스트리밍 처리
@@ -144,7 +178,7 @@ strands-agent-with-streamlit-sample/
 │       └── error_handler.py          # 통합 에러 처리
 │
 ├── agents/                           # 비즈니스 로직 레이어 (기존 유지)
-│   └── bedrock_agent.py              # Strands Agent 통합 및 조정
+│   └── strands_agent.py              # Strands Agent 통합 및 조정
 │
 ├── handlers/                         # 이벤트 처리 레이어 (기존 유지)
 │   ├── __init__.py
@@ -160,6 +194,9 @@ strands-agent-with-streamlit-sample/
 │       ├── tools.py                 # 도구 실행 표시
 │       ├── utils.py                 # 유틸리티 함수
 │       └── placeholders.py          # placeholder 유틸리티
+│
+├── env/                              # 🆕 환경 변수 설정
+│   └── local.env                     # 샘플 환경 변수 파일
 │
 ├── tests/
 │   ├── test_streamlit_flow.py        # UI 플로우 테스트

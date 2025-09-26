@@ -31,3 +31,12 @@ Thumbs.db
 # AI Agent files
 .claude/
 .amazonq/
+
+# Environment variables (contains sensitive credentials)
+.env
+.env.local
+.env.production
+.env.*
+
+# Local configuration
+*.local
